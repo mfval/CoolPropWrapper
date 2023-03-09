@@ -165,7 +165,13 @@ classdef CoolPropWrapper < handle
         function gamma = surfaceTension(obj,Atype,A,Btype,B)
             %surfaceTension returns the surfaceTension
             %   TODO
+            currAbstractStateSrc = obj.AbstractStateSrc;
+            if strcmp(currAbstractStateSrc, obj.EOS.BICUBIC_HEOS) || ...
+                strcmp(currAbstractStateSrc, obj.EOS.TTSE_HEOS)
+                obj.setAbstractStateSrc(obj.EOS.HEOS);
+            end
             gamma = obj.property(Atype,A,Btype,B,{'gamma'}); 
+            obj.setAbstractStateSrc(currAbstractStateSrc)
         end
         function phase = phase(obj,Atype,A,Btype,B)
             %phase returns the phase
