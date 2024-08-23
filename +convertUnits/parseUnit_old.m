@@ -1,4 +1,4 @@
-function parseUnit(str, units_LUT)
+function parseUnit_old(str, units_LUT)
 
 % sanitize input str
 str = strtrim(lower(str));
