@@ -11,12 +11,19 @@ classdef CoolPropWrapper < handle
         inputPairType
         outputMode = 'mat'
     end
+
+    properties (Access=protected)
+        as_phase
+        
+    end
     
     methods
         function obj = CoolPropWrapper(fluidName)
             %CoolPropWrapper Construct an instance of this class
             %   fluidName defaults to R245fa if not specified
-            if nargin == 1
+            if nargin < 1
+                % TODO: That's fine?
+            elseif nargin == 1
                 obj.fluid = fluidName;
             end
             try
@@ -96,6 +103,7 @@ classdef CoolPropWrapper < handle
                 phase = '';
             end
             phase = obj.scrubInput(phase);
+            obj.as_phase = phase;
             switch phase
                case 'liquid'
                    phase = obj.CoolPropHandle.iphase_liquid;
@@ -107,6 +115,7 @@ classdef CoolPropWrapper < handle
                     phase = obj.CoolPropHandle.iphase_not_imposed;
             end
             obj.CoolProp.specify_phase(phase);
+            
         end
         function phase = getSpecifyPhase(obj)
             phase = obj.CoolProp.phase();
@@ -189,6 +198,19 @@ classdef CoolPropWrapper < handle
         end
         function Psat = PsatT(obj,T)
             Psat = obj.property('t',T,'q',zeros(length(T),1),{'p'});
+        end
+
+        % Overwrite saveobj method to allow serialization.
+        % This is needed to first manually process CoolProp and Abstract
+        % State as they are Python handles that cannot be serialized.
+        function s = saveobj(obj)
+            
+            % Remove reference to CoolProp and CoolPropHandle
+            obj.CoolProp = -1;
+            obj.CoolPropHandle = -1;
+
+            s = builtin('saveobj', obj);
+
         end
         
     end
@@ -289,7 +311,12 @@ classdef CoolPropWrapper < handle
             obj.params = split(obj.params,',');
         end
         function input = scrubInput(obj,input)
-           input = strtrim(lower(input)); 
+            if isempty(input)
+                input = "";
+            else
+                input = strtrim(lower(input)); 
+            end
+
         end
         function [A, B, swapped] = generateUpdatePair(obj, Alabel, A, Blabel, B)
             
@@ -385,6 +412,25 @@ classdef CoolPropWrapper < handle
         end
     end
     
+    methods (Static)
+        
+        % Load serialized object. This is most often needed when
+        % transferring between parpool workers and the host.
+        function obj = loadobj(s)
+            
+            % TODO: there are other ways of loading obj that does not
+            % guarantee s being obj already.
+            obj = s;
+            
+            % Update the CoolProp handles
+             obj.CoolPropHandle = py.importlib.import_module('CoolProp');
+             obj.setFluid(s.fluid);    % Also sets the Abstract State handle
+             obj.setPhase(s.as_phase);
+
+        end
+
+    end
+
     properties (Constant)
        EOS = struct('HEOS','HEOS',...
                     'TTSE_HEOS','TTSE&HEOS',...
