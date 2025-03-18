@@ -6,7 +6,7 @@ classdef CoolPropWrapper < handle
         fluid = 'R245fa'
         CoolPropHandle      % ie. py.CoolProp
         CoolProp            % ie. py.CoolProp.AbstactState(...)
-        AbstractStateSrc = 'BICUBIC&HEOS';
+        AbstractStateSrc = 'TTSE&HEOS';
         params
         inputPairType
         outputMode = 'mat'
@@ -61,13 +61,17 @@ classdef CoolPropWrapper < handle
             
         end
         function setAbstractStateSrc(obj, src)
+            arguments
+                obj
+                src {mustBeMember(src,{'HEOS','TTSE&HEOS','BICUBIC&HEOS'})}
+            end
             src = upper(src);
             switch src
                 case {'HEOS','TTSE&HEOS','BICUBIC&HEOS'}
                     obj.AbstractStateSrc = src;
                     obj.setFluid(obj.fluid);
                 case {'DEFAULT','RESET'}
-                    obj.AbstractStateSrc = 'BICUBIC&HEOS';
+                    obj.AbstractStateSrc = 'TTSE&HEOS';
                     obj.setFluid(obj.fluid);
                 otherwise
                     error('%s is not a valid Abstract State source\n',...
