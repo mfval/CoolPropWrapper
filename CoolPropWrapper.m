@@ -7,11 +7,11 @@ classdef CoolPropWrapper < handle
         
         AbstractStateSrc = 'TTSE&HEOS';
         params
-        inputPairType
         outputMode = 'mat'
     end
 
     properties (Transient)
+        inputPairType
         CoolPropHandle      % ie. py.CoolProp
         CoolProp            % ie. py.CoolProp.AbstactState(...)
     end
