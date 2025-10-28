@@ -4,12 +4,16 @@ classdef CoolPropWrapper < handle
     
     properties
         fluid = 'R245fa'
-        CoolPropHandle      % ie. py.CoolProp
-        CoolProp            % ie. py.CoolProp.AbstactState(...)
+        
         AbstractStateSrc = 'TTSE&HEOS';
         params
         inputPairType
         outputMode = 'mat'
+    end
+
+    properties (Transient)
+        CoolPropHandle      % ie. py.CoolProp
+        CoolProp            % ie. py.CoolProp.AbstactState(...)
     end
 
     properties (Access=protected)
@@ -428,6 +432,8 @@ classdef CoolPropWrapper < handle
             
             % Update the CoolProp handles
              obj.CoolPropHandle = py.importlib.import_module('CoolProp');
+             obj.CoolProp = ...
+                    obj.CoolPropHandle.AbstractState(obj.AbstractStateSrc, obj.fluid);
              obj.setFluid(s.fluid);    % Also sets the Abstract State handle
              obj.setPhase(s.as_phase);
 
