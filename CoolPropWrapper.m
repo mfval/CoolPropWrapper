@@ -213,11 +213,20 @@ classdef CoolPropWrapper < handle
         % State as they are Python handles that cannot be serialized.
         function s = saveobj(obj)
             
+            % Save reference to CoolProp and CoolPropHandle
+            temp_CoolProp = obj.CoolProp;
+            temp_CoolPropHandle = obj.CoolPropHandle;
+
             % Remove reference to CoolProp and CoolPropHandle
             obj.CoolProp = -1;
             obj.CoolPropHandle = -1;
-
+            
+            % Store results of built-in saveobj function
             s = builtin('saveobj', obj);
+
+            % Restore handles
+            obj.CoolProp = temp_CoolProp;
+            obj.CoolPropHandle = temp_CoolPropHandle;
 
         end
         
