@@ -3,7 +3,7 @@ classdef CoolPropWrapper < handle
     %   Detailed explanation goes here
     
     properties
-        fluid = 'R245fa'
+        fluid = 'Water'
         
         AbstractStateSrc = 'TTSE&HEOS';
         params
@@ -17,8 +17,7 @@ classdef CoolPropWrapper < handle
     end
 
     properties (Access=protected)
-        as_phase
-        
+        as_phase        
     end
     
     methods
@@ -37,28 +36,72 @@ classdef CoolPropWrapper < handle
             catch ME
                 
                 warning(ME.message);
-                [~,e]=pyversion;
+                e=pyenv;
                if ~isempty(e)
                     res = questdlg('A python module has been found, but CoolProp might have not been installed. Should I install it?',...
                                     'Install CoolProp?','Yes','No','Yes');
                     if strcmp('Yes',res)
-                        system([e,' -m pip install --user -U CoolProp']);
+                        % Locate +CoolPropWrapper directory
+                        coolpropwrapper_dir = what('+CoolPropWrapper');
+                        
+                        % Error if +CoolPropWrapper dir cannot be found
+                        if isempty(coolpropwrapper_dir)
+                            error('Cannot find +CoolPropWrapper directory');
+                        end
+
+                        % Error if multiple +CoolPropWrapper dirs are found
+                        if numel(loc) > 1
+                            error('Multiple +CoolPropWrapper directories found');
+                        end
+                            
+                        % Retrieve +CoolPropWrapper path
+                        coolpropwrapper_dir = coolpropwrapper_dir.path;
+                        python_pip_req_path = string(fullfile(coolpropwrapper_dir, 'requirements.txt'));
+
+                        install_code = system(e.Executable+" -m pip install --user -U -r """+ python_pip_req_path + """");
+
+                        if install_code == 0
+                            warning('CoolProp was installed successfully.')
+                        else
+                            error('Python pip install failed.')
+                        end                        
+                    else
+                        warning('Please install CoolProp and/or restart MATLAB.');
                     end
-                    warning('Please install CoolProp and/or restart MATLAB.');
                else
-                    defaultPath = fullfile(getenv('LOCALAPPDATA'),'Programs','Python','Python310');
-                    try
-                        pyversion(fullfile(defaultPath, 'python.exe'));
-                    catch ME
+                   
+                   % Find the python executable
+                   if ispc()
+                       % CMD is the default shell. Using `where`
+                       query_cmd = 'where python';
+                   else % if isunix()
+                       % `which` should be available on unix systems 
+                       query_cmd = 'which python';
+                   end
+
+                   % Perform query
+                   [query_code, query_res] = system(query_cmd);
+                   % Non-zero exit code means notfound.
+                   if query_code ~= 0
+                       error('No python on system PATH');
+                   end
+                   % Split response by \n
+                   query_res = strsplit(query_res, '\n');
+                   % Choose the first split result
+                   pythonPath = query_res{1};
+                   
+                   try
+                       pyenv(pythonPath);
+                   catch
                         disp('Python version info:')
-                        pyversion
-                    end
-                    locationCmd = sprintf("system(['explorer ','%s']);",defaultPath);
-                    
-                    warning('Not sure what happened. Verify Python v3.7+ and the Coolprop Library are installed.');
-                    warning('Python is usually installed <a href="matlab:%s">HERE</a>.',locationCmd);
-                    warning('For more info: <a href="http://www.coolprop.org/coolprop/wrappers/MATLAB/index.html">http://www.coolprop.org/coolprop/wrappers/MATLAB/index.html</a>.');
-                    error('Stopping now.');
+                        pyenv
+                   end
+
+                   warning('Not sure what happened. Verify Python v3.9+ and the Coolprop Library are installed.');
+                   warning('Your currently configured Python is installed <a href="matlab:%s">HERE</a>.',fileparts(pythonPath));
+                   warning('For more info: <a href="http://www.coolprop.org/coolprop/wrappers/MATLAB/index.html">http://www.coolprop.org/coolprop/wrappers/MATLAB/index.html</a>.');
+                   warning('Ensure a compatible Python version is installed: <a href="https://www.mathworks.com/support/requirements/python-compatibility.html">https://www.mathworks.com/support/requirements/python-compatibility.html</a>.')
+                   error('Stopping now.');
                 end
                     
             end
