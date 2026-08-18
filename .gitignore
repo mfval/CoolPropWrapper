@@ -1,6 +1,6 @@
-**/.DS_Store
-./**/*.asv
+.DS_Store
+*.asv
 
-./**/.venv*
-./**/.venv*/
+.venv*
+.venv*/
 
