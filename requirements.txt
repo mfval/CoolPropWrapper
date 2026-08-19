@@ -1,3 +1,4 @@
 # CoolProp
 CoolProp==8.0.0
+nanobind
 
